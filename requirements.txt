@@ -1,0 +1,9 @@
+torch==2.6.0
+torchvision
+transformers
+accelerate
+timm
+einops
+open-clip-torch
+Pillow
+pydantic==1.10.13

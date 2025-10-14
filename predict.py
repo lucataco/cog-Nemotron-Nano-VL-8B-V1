@@ -5,7 +5,8 @@ from cog import BasePredictor, Input, Path
 import os
 import time
 import subprocess
-from typing import List
+from typing import List, Optional
+import sys
 from PIL import Image
 from transformers import AutoImageProcessor, AutoModel, AutoTokenizer
 
@@ -23,18 +24,26 @@ class Predictor(BasePredictor):
     def setup(self) -> None:
         """Load the model into memory to make running multiple predictions efficient"""
 
+        # Force offline to prevent network downloads and reduce log noise
+        os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
+        os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
+        os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+        os.environ.setdefault("HF_HUB_VERBOSITY", "error")
+        os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+        os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+
         # Download weights
         if not os.path.exists(MODEL_PATH):
             download_weights(MODEL_URL, MODEL_PATH)
 
-        # Ensure local RADIO code is importable for vision backbone
-        # radio_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "radio"))
-        # if radio_dir not in sys.path:
-            # sys.path.insert(0, radio_dir)
+        # Ensure project root (with local radio shim) is importable
+        project_root = os.path.abspath(os.path.dirname(__file__))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
         
         # Load model with GPU support and explicit attention implementation
         # Note: First run may download vision encoder (C-RADIOv2-H) from HuggingFace
-        # It will be cached in ~/.cache/huggingface for subsequent runs
         self.model = AutoModel.from_pretrained(
             MODEL_PATH, 
             trust_remote_code=True, 
@@ -54,12 +63,12 @@ class Predictor(BasePredictor):
 
     def predict(
         self,
-        images: List[Path] = Input(
-            description="List of input images. Can be a single image or multiple images for multi-image questions."
+        image: Path = Input(
+            description="Single input image"
         ),
         question: str = Input(
-            description="Question or prompt about the image(s)",
-            default="Describe the image(s)."
+            description="Question or prompt about the image",
+            default="Describe the image."
         ),
         max_new_tokens: int = Input(
             description="Maximum number of tokens to generate",
@@ -76,11 +85,9 @@ class Predictor(BasePredictor):
     ) -> str:
         """Run a single prediction on the model"""
         
-        # Convert Path objects to PIL Images
-        image_list = [Image.open(img_path) for img_path in images]
-        
-        # Process images
-        image_features = self.image_processor(image_list)
+        # Load and process single image
+        img = Image.open(image)
+        image_features = self.image_processor(img)
         
         # Generation config
         generation_config = {

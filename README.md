@@ -85,8 +85,7 @@ If `checkpoints/` does not exist at first run, the LLM bundle is fetched once vi
 - Excessive logs or HF download notices: confirm offline env vars are set (they are by default in `predict.py`), and that `checkpoints/` + `Radiov2/` are present
 
 ## License
-- RADIO v2 code and assets in `Radiov2/` are subject to their respective licenses (see files and headers)
-- Nemotron Nano VL configuration here is adapted for inference; please review upstream licenses and usage terms
-- This wrapper code is provided under the same license as this repository
 
+The code in this repository is licensed under the [Apache License 2.0](LICENSE).
 
+The model weights are not covered by this license. [nvidia/Llama-3.1-Nemotron-Nano-VL-8B-V1](https://huggingface.co/nvidia/Llama-3.1-Nemotron-Nano-VL-8B-V1) and its C-RADIOv2-H vision encoder are under the [NVIDIA Open Model License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/), and the model is built with Llama, so the Llama 3.1 Community License also applies.
